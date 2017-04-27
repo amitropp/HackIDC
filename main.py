@@ -1,25 +1,26 @@
 #coding=utf8
 
-PICK_UP_STR= "איסוף עצמי"
-
-def compare_hebrew(str1, str2):
-    return str1.decode('UTF-8') == str2.decode('UTF-8')
+from dataframes import branches, carriers, orders, inventory, products
+import pandas as pd
 
 
-#main function
+PICK_UP_STR = "איסוף עצמי"
+
+
 def organize_orders(orders):
-    # initialize carriers lists
+    """ goes through all orders in the DataFrame and handles each one of them
+    according to the flow diagram. """
+    task_lists = initialize_task_lists()
     for order in orders:
-        #if need delivery
-        if not compare_hebrew(order['delivery'], PICK_UP_STR):
-            delivery_branch = extract_closest_branch()
-            stock_branch = find_close_branch_with_product()
-            # prudoct exit at the delivery branch
-            if delivery_branch == stock_branch:
-                assign_to_carrier(order, delivery_branch)
+        if not string_cmp(order['delivery'], PICK_UP_STR):  # delivery is needed
+            product_id = order['product_id']
+            customer_address = order['address']
+            delivery_branch = find_closest_branch(customer_address)
+            stock_branch = find_closest_branch(customer_address, prod_id=product_id)
+            if delivery_branch == stock_branch:  # product leaves from closest branch
+                assign_to_carrier(order, delivery_branch, task_lists, to_customer=True)
                 continue
-            if compare_hebrew(delivery_branch['district'], stock_branch['district']):
-                #found product on the same district
+            if string_cmp(delivery_branch['district'], stock_branch['district']):  # product is in customer's district
                 plan_route(order, stock_branch, delivery_branch)
                 continue
             else:
@@ -29,32 +30,72 @@ def organize_orders(orders):
                             exceptional()
 
 
+def initialize_task_lists():
+    """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
+    return {carrier['carrier_name']: [] for carrier in carriers}
 
-#return branch id
-def extract_closest_branch(customer_address):
-    pass
 
-#return branch id
+def string_cmp(str1, str2):
+    """ compares strings, including ones in Hebrew. """
+    return str1.decode('UTF-8') == str2.decode('UTF-8')
+
+
+def product_in_branch(product_id, branch_id):
+    """ returns True iff the product is in the given branch's inventory. """
+    prod_entry = inventory[inventory['product_id'] == product_id]
+    return prod_entry[branch_id] > 1
+
+
+def find_closest_location(locations, address):  # TODO implement
+    """ returns the ID of the closest branch out of a list using the GoogleMaps API. """
+    return locations and address
+
+
+def find_closest_branch(customer_address, prod_id=None):
+    """ returns the branch ID of the branch which is closest to the customer address.
+    if a product ID is given - the returned branch must have the required product. """
+    if not prod_id:
+        branches_locations = [branch['branch_id'] for branch in branches]  # closest branch to customer
+    else:  # closest branch to customer with the given product
+        branches_locations = [branch['branch_id'] for branch in branches
+                              if product_in_branch(prod_id, branch['branch_id'])]
+    closest_branch = find_closest_location(branches_locations, customer_address)
+    return closest_branch
+
+
 def find_close_branch_with_product(customer_address, product_id):
     pass
 
-#optional args - branch_id to deliver to
-def assign_to_carrier(order, delivery_branch_id, to_customer=True, *args):
-    pass
+
+def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *args):
+    """ adds an entry to the delivery list of the correct carrier.
+    args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
+    entry = {
+        'dst_address': order['address'] if to_customer else branches[branches['branch_id'] == args[0]].address,
+        'product_id': order['product_id'],
+        'recipient': order['name'] if to_customer else branches[branches['branch_id'] == args[0]].branch_name,
+        'phone_number': order['phone_number'] if to_customer else branches[branches['branch_id'] ==
+                                                                           args[0]].phone_number
+    }
+    carrier_name = carriers[carriers['branch_id'] == delivery_branch].carrier_name
+    task_lists[carrier_name].append(entry)
 
 
 def plan_route(order, src_branch, dst_branch):
     pass
 
+
 def check_supplier_delivery_to_branch(product_id, branch_id):
     pass
+
 
 def check_supplier_delivery_to_customer(order):
     pass
 
+
 def bazzerable(order):
     pass
 
+
 def exceptional():
     pass
-

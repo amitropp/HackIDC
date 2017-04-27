@@ -5,8 +5,8 @@ PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
 
 
 # import branches
-branches_headers = ['branch_id', 'district', 'address']
-branches_cols = [0, 8, 11] # column indices
+branches_headers = ['branch_id', 'branch_name', 'phone_number' 'district', 'address']
+branches_cols = [0, 1, 6, 8, 11]  # column indices
 branches = pd.read_csv('{}/branches.csv'.format(PATH), encoding='hebrew', usecols=branches_cols,
                        header=0, names=branches_headers)
 branches.head(n=5)
