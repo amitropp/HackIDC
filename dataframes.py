@@ -37,4 +37,9 @@ inventory.drop(inventory.columns[exclude_cols], axis=1, inplace=True)
 inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
 
 
+# initialize task lists
+""" initializes an empty list of tasks per each carrier in the carriers DataFrame. """
+task_lists = {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
+task_lists['buzzer'] = []
+
 

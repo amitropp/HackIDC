@@ -1,77 +1,64 @@
-#coding=utf8
+# coding=utf8
 
-from dataframes import branches, carriers, orders, inventory, products
+from dataframes import branches, carriers, orders, inventory, products, task_lists
+# from maps_utils import find_closest_branch
 
-
+BUZZER_BRANCH = 109
+BUZZER_VALUES = [1, 3]
 PICK_UP_STR = "איסוף עצמי"
 
 
 def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
     according to the flow diagram. """
-    task_lists = initialize_task_lists()
     for _, order in orders.iterrows():
         if not string_cmp(order.delivery, PICK_UP_STR):  # delivery is needed
-            product_id = order['product_id']
-            customer_address = order['address']
+            # product_id = order['product_id']
+            # customer_address = order['address']
             # print "product_id : " + product_id
-            branches_ids_by_duration = find_closest_branch(customer_address)
-            delivery_branch = branches_ids_by_duration[0]
-            delivery_branch = 102 #haifa
-            stock_branch = find_closest_branch_with_product(branches_ids_by_duration, prod_id=product_id)
-            stock_branch = 112 #jerusalem
+            # branches_ids_by_duration = find_closest_branch(customer_address)
+            # delivery_branch = branches_ids_by_duration[0]
+            delivery_branch = 102  # haifa
+            # stock_branch = find_closest_branch_with_product(branches_ids_by_duration, prod_id=product_id)
+            stock_branch = 112  # jerusalem
             if delivery_branch == stock_branch:  # product leaves from closest branch
-                 assign_to_carrier(order, delivery_branch, task_lists, to_customer=True)
-                 continue
-            # delivery_branch_sidtrict = branches.loc[branches.branch_id == delivery_branch].district.iloc[0]
-            # dstock_branch_sidtrict = branches.loc[branches.branch_id == stock_branch].district.iloc[0]
-            # if string_cmp(delivery_branch_sidtrict, dstock_branch_sidtrict):  # product is in customer's district
-            if stock_branch != -1:
+                assign_to_carrier(order, delivery_branch, to_customer=True)
+                continue
+            if not stock_branch:
                 plan_route(order, stock_branch, delivery_branch)
                 continue
             else:
-                if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
+                if not check_supplier_delivery_to_branch(order, delivery_branch):
                     if not check_supplier_delivery_to_customer(order):
-                        if not bazzerable(order):
-                            exceptional()
+                        if not buzzerable(order):
+                            exceptional(order)
 
 
-def initialize_task_lists():
-    """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
-    return {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
-
-
-def get_unicode(s):     #pass test
+def get_unicode(s):  # pass test
     if isinstance(s, unicode):
         return s.encode("utf-8")
     return s
 
 
-def string_cmp(str1, str2):     #pass test
+def string_cmp(str1, str2):  # pass test
     """ compares strings, including ones in Hebrew. """
     return get_unicode(str1) == get_unicode(str2)
 
 
-def product_in_branch(product_id, branch_id): #pass test
+def product_in_branch(product_id, branch_id):  # pass test
     """ returns True iff the product is in the given branch's inventory. """
     return inventory.loc[inventory['product_id'] == str(product_id)][str(branch_id)].iloc[0] > 1
 
 
-def find_closest_branch(customer_address):
-    """ returns a list of Branches IDs sorted from the nearest to the farthest from the customer address."""
-    # call tal's function
-    return []
-
-
 def find_closest_branch_with_product(branches_ids_by_duration, product_id):
-    """ returns branch ID of the nearest branch with product in stock.
-    return -1 if there is no relevant branch"""
-    for id in branches_ids_by_duration:
-        if product_in_branch(product_id, id):
-            return id
-    return -1
+    """ returns branch ID of the nearest branch with product in stock or None if no such exists """
+    for branch_id in branches_ids_by_duration:
+        if product_in_branch(product_id, branch_id):
+            return branch_id
+    return
 
-def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *args): #pass test to_customer=True
+
+def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *args):  # pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
     args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
     entry = {
@@ -81,29 +68,65 @@ def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *arg
         'phone_number': order['phone_number'] if to_customer else branches[branches['branch_id'] ==
                                                                            args[0]].phone_number
     }
-    carrier_name = carriers.loc[carriers.branch_id == delivery_branch].carrier_name.iloc[0]
+    carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
+        else carriers.loc[carriers.branch_id == carrier_branch].carrier_name.iloc[0]
     task_lists[carrier_name].append(entry)
 
 
-def plan_route(order, src_branch, dst_branch): # TODO implement
-    pass
+def plan_route(order, src_branch, dst_branch):
+    """ a route passes from branch A to branch B and then directly to the customer. """
+    assign_to_carrier(order, src_branch, False, dst_branch)
+    assign_to_carrier(order, dst_branch)
 
 
-def check_supplier_delivery_to_branch(product_id, branch_id): # TODO implement
-    pass
+def check_supplier_delivery_to_branch(order, branch_id):
+    """ prompt the user to check if the relevant supplier can provide the product to the delivery
+    branch. If it can - the relevant task is added to the delivery branch's list. """
+    product_id = order.product_id
+    supplier_name = products.loc[products.product_id == str(product_id)].supplier_name.iloc[0]
+    product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
+    branch_name = branches.loc[branches.branch_id == str(branch_id)].branch_name.iloc[0]
+
+    user_response = ''
+    while user_response not in ['Y', 'N', 'y', 'n']:
+        user_response = raw_input('Can supplier {} send product {} ({}) to branch {}?\tY/N'.format(
+            supplier_name, product_id, product_name, branch_name))
+    if user_response.lower() == 'y':
+        assign_to_carrier(order, branch_id)
+        return True
+    else:
+        return False
 
 
-def check_supplier_delivery_to_customer(order): # TODO implement
-    pass
+def check_supplier_delivery_to_customer(order):
+    """ prompt the user to check if the relevant supplier can provide the product directly
+    to the customer. If it can - this is taken care of manually - no task is added to the lists. """
+    product_id = order.product_id
+    supplier_name = products.loc[products.product_id == str(product_id)].supplier_name.iloc[0]
+    product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
+    address = order.address
+
+    user_response = ''
+    while user_response not in ['Y', 'N', 'y', 'n']:
+        user_response = raw_input('Can supplier {} send product {} ({}) to customer at address'
+                                  '{}?\tY/N'.format(supplier_name, product_id, product_name, address))
+    return user_response.lower() == 'y'
 
 
-def bazzerable(order): # TODO implement
-    """Check if there ia """
-    pass
+def buzzerable(order):
+    """ check if a product can be delivered by Buzzer. If it can - assign it correctly. """
+    product_id = order.product_id
+    buzzer_value = products.loc[products.product_id == str(product_id)].buzzerable.iloc[0]
+    if buzzer_value in BUZZER_VALUES:
+        assign_to_carrier(order, task_lists)
+        return True
+    return False
 
 
-def exceptional(): # TODO implement
-    pass
+def exceptional(order):
+    print 'Exception: order {} to customer {} cannot be delivered.\n' \
+          'Please inform the customer of this issue at {}'.format(order.order_id, order.name, order.phone_number)
+
 
 if __name__ == '__main__':
     organize_orders()
