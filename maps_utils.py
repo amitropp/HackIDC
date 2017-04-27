@@ -1,62 +1,66 @@
-import requests, math
-from dataframes import branches, carriers, orders, inventory, products
+import requests
+from dataframes import branches
 
 FILE_NAME = "branches_distances.csv"
 # The maximum duration travel we are allowing from out source to the destination
-MAX_DURATION = "9000"
+MAX_DURATION = 9000
 
 
 our_key = "AIzaSyABeegXYIuVyyLT78Xzj2jFbcYH1iL45UM"
 url = "https://maps.googleapis.com/maps/api/distancematrix/json" + \
       "?units=imperial" + "&origins={0}&destinations={1}&key=" + our_key
 
-def writeToFile(row):
-    with open(FILE_NAME, 'a') as f:
-        f.write(row)
-        f.write("\n")
-
-
-# Calc the distance
-def calcDisFromBranches(branches):
-
-    for idx, branch in enumerate(branches):
-        # Create an empty array for the durations
-        durArray = [0] * len(branches)
-        for innerIdx, des in enumerate(branches):
-
-            if idx != innerIdx:
-                curr_url = url.format(branch, des)
-
-                # Convert to json format
-                print("calc dis from: " + branch + "to ==  " + des)
-                response = requests.get(curr_url).json()
-
-                # Return the duration time from the origin to destination (in seconds)
-                print(response)
-                durArray[innerIdx] = response["rows"][0]["elements"][0]["duration"]["value"]
-        # For each row writes to the csv file the distances from the origin
-        writeToFile(','.join(["%d" % val for val in durArray]))
-
 
 def find_closest_branch(customer_address):
-    """ This function returns a list of branche's ids in ascending order"""
+    """ This function returns a list of branche's ids in ascending order by their distance from the costumer"""
     # If the duration travel is less than the maximum - add it to the list
-    relavant_branches = []
-    for _, branch in branches.iterrows():
-        min_duration = math.inf
-        min_id = -1
+    # The branche's ids that are in the transport distance
+    relevant_branches = []
+    min_duration = float('Inf')
+    min_id = -1
+    branches_array = []
 
-        addres = branch.address
-        id = branch.branch_id
-
-        curr_url = url.format(addres, customer_address)
+    for idx, branch in branches.iterrows():
+        address = branch.address
+        curr_url = url.format(address, customer_address)
 
         # Convert to json format
-        print("calc dis from: " + branch + "to ==  " + customer_address)
         response = requests.get(curr_url).json()
 
         # Return the duration time from the origin to destination (in seconds)
-        print(response)
-        durArray[innerIdx] = response["rows"][0]["elements"][0]["duration"]["value"]
-        # For each row writes to the csv file the distances from the origin
-        writeToFile(','.join(["%d" % val for val in durArray]))
+        curr_dur = response["rows"][0]["elements"][0]["duration"]["value"]
+        curr_id = branch.branch_id
+        branches_array += [(curr_id, curr_dur)]
+
+        if min_duration > curr_dur:
+            min_duration = curr_dur
+            min_id = curr_id
+
+    # sort the array by duration
+    sorted_list = sorted(branches_array, key=lambda x: x[1])
+
+    for i in range(len(sorted_list)):
+        if sorted_list[i][1] <= MAX_DURATION:
+            relevant_branches.append(sorted_list[i][0])
+        # In case that the closet branch to the customer farthest from the MAX_DURATION - return the specific branch
+        elif min_duration > MAX_DURATION:
+            return [min_id]
+        else:
+            break
+    return relevant_branches
+
+
+def main():
+
+    # a = "nan"
+    # if a != "nan":
+    #     print(a)
+    arr = find_closest_branch("רחוב הברוש כפר סבא")
+
+    for num in range(len(arr)):
+        print(arr[num])
+
+
+
+if __name__ == '__main__':
+    main()
