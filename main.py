@@ -26,14 +26,14 @@ def organize_orders():
             dstock_branch_sidtrict = branches.loc[branches.branch_id == stock_branch].district.iloc[0]
             if string_cmp(delivery_branch_sidtrict, dstock_branch_sidtrict):  # product is in customer's district
                 print "delivery_branch_sidtrict == dstock_branch_sidtrict"
-                plan_route(order, stock_branch, delivery_branch) #TODO test
+                plan_route(order, stock_branch, delivery_branch)
                 continue
             else:
                 print "delivery_branch_sidtrict != dstock_branch_sidtrict"
-                # if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
-                #     if not check_supplier_delivery_to_customer(order):
-                #         if not bazzerable(order):
-                #             exceptional()
+                if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
+                    if not check_supplier_delivery_to_customer(order):
+                        if not bazzerable(order):
+                            exceptional()
 
 
 def initialize_task_lists():
@@ -41,13 +41,13 @@ def initialize_task_lists():
     return {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
 
 
-def get_unicode(s):
+def get_unicode(s):     #pass test
     if isinstance(s, unicode):
         return s.encode("utf-8")
     return s
 
 
-def string_cmp(str1, str2):
+def string_cmp(str1, str2):     #pass test
     """ compares strings, including ones in Hebrew. """
     return get_unicode(str1) == get_unicode(str2)
 
@@ -75,11 +75,11 @@ def find_closest_branch(customer_address, prod_id=None):
     return closest_branch
 
 
-def find_close_branch_with_product(customer_address, product_id):
+def find_close_branch_with_product(customer_address, product_id): # TODO implement
     pass
 
 
-def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *args):
+def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *args): #pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
     args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
     entry = {
@@ -93,23 +93,23 @@ def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *arg
     task_lists[carrier_name].append(entry)
 
 
-def plan_route(order, src_branch, dst_branch):
+def plan_route(order, src_branch, dst_branch): # TODO implement
     pass
 
 
-def check_supplier_delivery_to_branch(product_id, branch_id):
+def check_supplier_delivery_to_branch(product_id, branch_id): # TODO implement
     pass
 
 
-def check_supplier_delivery_to_customer(order):
+def check_supplier_delivery_to_customer(order): # TODO implement
     pass
 
 
-def bazzerable(order):
+def bazzerable(order): # TODO implement
     pass
 
 
-def exceptional():
+def exceptional(): # TODO implement
     pass
 
 if __name__ == '__main__':
