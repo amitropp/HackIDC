@@ -12,8 +12,8 @@ branches = pd.read_csv('{}/branches.csv'.format(PATH), encoding='hebrew', usecol
 branches.head(n=5)
 
 # import orders
-orders_headers = ['order_id', 'name', 'address', 'phone_number', 'date', 'product_id', 'amount', 'order_status']
-orders_cols = [0, 1, 2, 3, 4, 5, 11, 12] # column indices
+orders_headers = ['order_id', 'name', 'address', 'phone_number', 'date', 'product_id', 'amount', 'delivery', 'order_status']
+orders_cols = [0, 1, 2, 3, 4, 5, 10, 11, 12] # column indices
 orders = pd.read_csv('{}/orders.csv'.format(PATH), encoding='hebrew', usecols=orders_cols,
                      header=0, names=orders_headers)
 
