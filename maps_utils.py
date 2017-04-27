@@ -3,12 +3,18 @@ from dataframes import branches
 
 FILE_NAME = "branches_distances.csv"
 # The maximum duration travel we are allowing from out source to the destination
-MAX_DURATION = 9000
+MAX_DURATION = 1800
 
 
-our_key = "AIzaSyABeegXYIuVyyLT78Xzj2jFbcYH1iL45UM"
+our_key = "AIzaSyB4CnB2soqquiW2ZHidW_u-eJiOo4Ki8tg"
 url = "https://maps.googleapis.com/maps/api/distancematrix/json" + \
       "?units=imperial" + "&origins={0}&destinations={1}&key=" + our_key
+
+
+def get_unicode(s):  # pass test
+    if isinstance(s, unicode):
+        return s.encode("utf-8")
+    return s
 
 
 def find_closest_branch(customer_address):
@@ -22,10 +28,11 @@ def find_closest_branch(customer_address):
 
     for idx, branch in branches.iterrows():
         address = branch.address
-        curr_url = url.format(address, customer_address)
+        curr_url = url.format(get_unicode(address), get_unicode(customer_address))
 
         # Convert to json format
         response = requests.get(curr_url).json()
+        print 'response', response
 
         # Return the duration time from the origin to destination (in seconds)
         curr_dur = response["rows"][0]["elements"][0]["duration"]["value"]
@@ -49,18 +56,3 @@ def find_closest_branch(customer_address):
             break
     return relevant_branches
 
-
-def main():
-
-    # a = "nan"
-    # if a != "nan":
-    #     print(a)
-    arr = find_closest_branch("רחוב הברוש כפר סבא")
-
-    for num in range(len(arr)):
-        print(arr[num])
-
-
-
-if __name__ == '__main__':
-    main()

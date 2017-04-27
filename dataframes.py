@@ -1,8 +1,8 @@
 import pandas as pd
 
 
-# PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
-PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
+PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
+# PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
@@ -14,7 +14,7 @@ branches.head(n=5)
 # import orders
 orders_headers = ['order_id', 'name', 'address', 'phone_number', 'date', 'product_id', 'delivery', 'amount', 'order_status']
 orders_cols = [0, 1, 2, 3, 4, 5, 10, 11, 12] # column indices
-orders = pd.read_csv('{}/orders.csv'.format(PATH), encoding='hebrew', usecols=orders_cols,
+orders = pd.read_csv('{}/orders_ex.csv'.format(PATH), encoding='hebrew', usecols=orders_cols,
                      header=0, names=orders_headers)
 
 # import carriers
@@ -24,8 +24,8 @@ carriers = pd.read_csv('{}/carriers.csv'.format(PATH), encoding='hebrew', usecol
                        header=0, names=carriers_headers)
 
 # import products
-products_headers = ['product_id', 'supplier_id', 'supplier_name', 'buzzerable']
-products_cols = [0, 2, 3, 4] # column indices
+products_headers = ['product_id', 'product_name', 'supplier_id', 'supplier_name', 'buzzerable']
+products_cols = [0, 1, 2, 3, 4]  # column indices
 products = pd.read_csv('{}/products.csv'.format(PATH), encoding='hebrew', usecols=products_cols,
                        header=0, names=products_headers)
 
@@ -41,5 +41,3 @@ inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
 """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
 task_lists = {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
 task_lists['buzzer'] = []
-
-
