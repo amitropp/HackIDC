@@ -60,7 +60,7 @@ def product_in_branch(product_id, branch_id): #pass test
 def find_closest_branch(customer_address):
     """ returns a list of Branches IDs sorted from the nearest to the farthest from the customer address."""
     # call tal's function
-    pass
+    return []
 
 
 def find_closest_branch_with_product(branches_ids_by_duration, product_id):
@@ -98,6 +98,7 @@ def check_supplier_delivery_to_customer(order): # TODO implement
 
 
 def bazzerable(order): # TODO implement
+    """Check if there ia """
     pass
 
 
@@ -105,5 +106,4 @@ def exceptional(): # TODO implement
     pass
 
 if __name__ == '__main__':
-    #organize_orders()
-    #product_in_branch test
+    organize_orders()
