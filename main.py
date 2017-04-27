@@ -15,21 +15,21 @@ def organize_orders():
             product_id = order['product_id']
             customer_address = order['address']
             # print "product_id : " + product_id
-            # delivery_branch = find_closest_branch(customer_address)
+            branches_ids_by_duration = find_closest_branch(customer_address)
+            delivery_branch = branches_ids_by_duration[0]
             delivery_branch = 102 #haifa
-            # stock_branch = find_closest_branch(customer_address, prod_id=product_id)
+            stock_branch = find_closest_branch_with_product(branches_ids_by_duration, prod_id=product_id)
             stock_branch = 112 #jerusalem
             if delivery_branch == stock_branch:  # product leaves from closest branch
                  assign_to_carrier(order, delivery_branch, task_lists, to_customer=True)
                  continue
-            delivery_branch_sidtrict = branches.loc[branches.branch_id == delivery_branch].district.iloc[0]
-            dstock_branch_sidtrict = branches.loc[branches.branch_id == stock_branch].district.iloc[0]
-            if string_cmp(delivery_branch_sidtrict, dstock_branch_sidtrict):  # product is in customer's district
-                print "delivery_branch_sidtrict == dstock_branch_sidtrict"
+            # delivery_branch_sidtrict = branches.loc[branches.branch_id == delivery_branch].district.iloc[0]
+            # dstock_branch_sidtrict = branches.loc[branches.branch_id == stock_branch].district.iloc[0]
+            # if string_cmp(delivery_branch_sidtrict, dstock_branch_sidtrict):  # product is in customer's district
+            if stock_branch != -1:
                 plan_route(order, stock_branch, delivery_branch)
                 continue
             else:
-                print "delivery_branch_sidtrict != dstock_branch_sidtrict"
                 if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
                     if not check_supplier_delivery_to_customer(order):
                         if not bazzerable(order):
@@ -52,32 +52,24 @@ def string_cmp(str1, str2):     #pass test
     return get_unicode(str1) == get_unicode(str2)
 
 
-def product_in_branch(product_id, branch_id):
+def product_in_branch(product_id, branch_id): #pass test
     """ returns True iff the product is in the given branch's inventory. """
-    prod_entry = inventory[inventory['product_id'] == product_id]
-    return prod_entry[branch_id] > 1
+    return inventory.loc[inventory['product_id'] == str(product_id)][str(branch_id)].iloc[0] > 1
 
 
-def find_closest_location(locations, address):  # TODO implement
-    """ returns the ID of the closest branch out of a list using the GoogleMaps API. """
-    return locations and address
-
-
-def find_closest_branch(customer_address, prod_id=None):
-    """ returns the branch ID of the branch which is closest to the customer address.
-    if a product ID is given - the returned branch must have the required product. """
-    if not prod_id:
-        branches_locations = [branch['branch_id'] for branch in branches]  # closest branch to customer
-    else:  # closest branch to customer with the given product
-        branches_locations = [branch['branch_id'] for branch in branches
-                              if product_in_branch(prod_id, branch['branch_id'])]
-    closest_branch = find_closest_location(branches_locations, customer_address)
-    return closest_branch
-
-
-def find_close_branch_with_product(customer_address, product_id): # TODO implement
+def find_closest_branch(customer_address):
+    """ returns a list of Branches IDs sorted from the nearest to the farthest from the customer address."""
+    # call tal's function
     pass
 
+
+def find_closest_branch_with_product(branches_ids_by_duration, product_id):
+    """ returns branch ID of the nearest branch with product in stock.
+    return -1 if there is no relevant branch"""
+    for id in branches_ids_by_duration:
+        if product_in_branch(product_id, id):
+            return id
+    return -1
 
 def assign_to_carrier(order, delivery_branch, task_lists, to_customer=True, *args): #pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
@@ -113,4 +105,5 @@ def exceptional(): # TODO implement
     pass
 
 if __name__ == '__main__':
-    organize_orders()
+    #organize_orders()
+    #product_in_branch test
