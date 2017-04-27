@@ -1,43 +1,48 @@
 #coding=utf8
 
 from dataframes import branches, carriers, orders, inventory, products
-import pandas as pd
 
 
 PICK_UP_STR = "איסוף עצמי"
 
 
-def organize_orders(orders):
+def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
     according to the flow diagram. """
     task_lists = initialize_task_lists()
-    for order in orders:
-        if not string_cmp(order['delivery'], PICK_UP_STR):  # delivery is needed
+    for _, order in orders.iterrows():
+        if not string_cmp(order.delivery, PICK_UP_STR):  # delivery is needed
             product_id = order['product_id']
             customer_address = order['address']
-            delivery_branch = find_closest_branch(customer_address)
-            stock_branch = find_closest_branch(customer_address, prod_id=product_id)
-            if delivery_branch == stock_branch:  # product leaves from closest branch
-                assign_to_carrier(order, delivery_branch, task_lists, to_customer=True)
-                continue
-            if string_cmp(delivery_branch['district'], stock_branch['district']):  # product is in customer's district
-                plan_route(order, stock_branch, delivery_branch)
-                continue
-            else:
-                if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
-                    if not check_supplier_delivery_to_customer(order):
-                        if not bazzerable(order):
-                            exceptional()
+            # delivery_branch = find_closest_branch(customer_address)
+            # stock_branch = find_closest_branch(customer_address, prod_id=product_id)
+            # if delivery_branch == stock_branch:  # product leaves from closest branch
+            #     assign_to_carrier(order, delivery_branch, task_lists, to_customer=True)
+            #     continue
+            # if string_cmp(delivery_branch['district'], stock_branch['district']):  # product is in customer's district
+            #     plan_route(order, stock_branch, delivery_branch)
+            #     continue
+            # else:
+            #     if not check_supplier_delivery_to_branch(order['product_id'], delivery_branch):
+            #         if not check_supplier_delivery_to_customer(order):
+            #             if not bazzerable(order):
+            #                 exceptional()
 
 
 def initialize_task_lists():
     """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
-    return {carrier['carrier_name']: [] for carrier in carriers}
+    return {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
+
+
+def get_unicode(s):
+    if isinstance(s, unicode):
+        return s.encode("utf-8")
+    return s
 
 
 def string_cmp(str1, str2):
     """ compares strings, including ones in Hebrew. """
-    return str1.decode('UTF-8') == str2.decode('UTF-8')
+    return get_unicode(str1) == get_unicode(str2)
 
 
 def product_in_branch(product_id, branch_id):
@@ -99,3 +104,6 @@ def bazzerable(order):
 
 def exceptional():
     pass
+
+if __name__ == '__main__':
+    organize_orders()

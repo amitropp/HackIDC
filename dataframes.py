@@ -5,14 +5,14 @@ PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
 
 
 # import branches
-branches_headers = ['branch_id', 'branch_name', 'phone_number' 'district', 'address']
+branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
 branches_cols = [0, 1, 6, 8, 11]  # column indices
 branches = pd.read_csv('{}/branches.csv'.format(PATH), encoding='hebrew', usecols=branches_cols,
                        header=0, names=branches_headers)
 branches.head(n=5)
 
 # import orders
-orders_headers = ['order_id', 'name', 'address', 'phone_number', 'date', 'product_id', 'amount', 'delivery', 'order_status']
+orders_headers = ['order_id', 'name', 'address', 'phone_number', 'date', 'product_id', 'delivery', 'amount', 'order_status']
 orders_cols = [0, 1, 2, 3, 4, 5, 10, 11, 12] # column indices
 orders = pd.read_csv('{}/orders.csv'.format(PATH), encoding='hebrew', usecols=orders_cols,
                      header=0, names=orders_headers)
