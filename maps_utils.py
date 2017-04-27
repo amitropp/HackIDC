@@ -41,6 +41,7 @@ def calcDisFromBranches(branches):
 def find_closest_branch(customer_address):
     """ This function returns a list of branche's ids in ascending order"""
     # If the duration travel is less than the maximum - add it to the list
+    relavant_branches = []
     for _, branch in branches.iterrows():
         min_duration = math.inf
         min_id = -1
@@ -48,10 +49,10 @@ def find_closest_branch(customer_address):
         addres = branch.address
         id = branch.branch_id
 
-        curr_url = url.format(branch, des)
+        curr_url = url.format(addres, customer_address)
 
         # Convert to json format
-        print("calc dis from: " + branch + "to ==  " + des)
+        print("calc dis from: " + branch + "to ==  " + customer_address)
         response = requests.get(curr_url).json()
 
         # Return the duration time from the origin to destination (in seconds)
