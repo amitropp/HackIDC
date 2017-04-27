@@ -1,8 +1,8 @@
 import pandas as pd
 
 
-PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
-
+# PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
+PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
