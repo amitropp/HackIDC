@@ -2,7 +2,7 @@
 
 from csv import DictWriter
 from dataframes import branches, carriers, orders, inventory, products, task_lists, \
-    product_not_in_stock, MIN_MISSING_PRODUCT_TO_ALERT
+    product_not_in_stock, MIN_MISSING_PRODUCT_TO_ALERT, MISSING_PRODUCT_FILE
 from gui import ok_msg, yes_no_msg
 from maps_utils import find_closest_branches
 from time import sleep
@@ -51,11 +51,11 @@ def handle_order(order):
                     exceptional(order)
         #update product_not_in_stock list
         if not is_in_delivery_branch:
-            if delivery_branch in product_not_in_stock.keys():
-                value = [order['product_id'], product_not_in_stock.get(delivery_branch)[1] + 1]
+            key = [delivery_branch, order['product_id']]
+            if key in product_not_in_stock:
+                product_not_in_stock[key] += 1
             else:
-                value = [order['product_id'], 1]
-            product_not_in_stock[delivery_branch] = value
+                product_not_in_stock[key] = 1
 
 
 def get_unicode(s):  # pass test
@@ -102,19 +102,19 @@ def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *ar
         else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
 
     TASKS_LOCK.acquire()
-    # print "TASKS_LOCK.acquire() from thread " + threading.current_thread().getName()
+    print "TASKS_LOCK.acquire() from thread " + threading.current_thread().getName()
     print "carrier_name: " + carrier_name
     task_lists[carrier_name].append(entry)
     TASKS_LOCK.release()
-    # print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
+    print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
     # Update inventory
     if to_customer:
         INVENTORY_LOCK.acquire()
-        # print "INVENTORY_LOCK.acquire() from thread " + threading.current_thread().getName()
+        print "INVENTORY_LOCK.acquire() from thread " + threading.current_thread().getName()
         curr_val = inventory.loc[inventory.product_id == str(product_id)][str(carrier_branch)].iloc[0]
         inventory.set_value(str(product_id), str(carrier_branch), curr_val - order.amount)
         INVENTORY_LOCK.release()
-        # print "INVENTORY_LOCK.release() from thread " + threading.current_thread().getName()
+        print "INVENTORY_LOCK.release() from thread " + threading.current_thread().getName()
 
 
 def plan_route(order, src_branch, dst_branch):
@@ -183,31 +183,21 @@ def exceptional(order):
           'Please inform the customer of this issue at {}'.format(order.order_id, order.name, order.phone_number)
 
 
+
 def create_missing_prod_file():
-    inner_list = {}
-    # Amit
-    # for key, val in product_not_in_stock:
-    #     prod_counter = val[1]
-    #     branc_id = val[0]
-    #     if prod_counter >= MIN_MISSING_PRODUCT_TO_ALERT:
-    #         if branc_id in inner_list.keys():
-    #              value = inner_list[key, product_not_in_stock.get(delivery_branch)[1] + 1]
-    #         else:
-    #             value = [order['product_id'], 1]
-    #         product_not_in_stock[delivery_branch] = value
+    inner_list = []
+    for key in product_not_in_stock:
+        prod_counter = product_not_in_stock[key]
+        if prod_counter >= MIN_MISSING_PRODUCT_TO_ALERT:
+            inner_list.append([key[0], key[1], prod_counter])
 
-
-    # Tal
-    #
-    # # Sort the list by branches
-    # sortted_list = sorted(inner_list[0][0])
-    # file_name = "mis_prod_.csv"
-    #
-    # for row in sortted_list:
-    #     with open(file_name, 'a') as f:
-    #         f.write((','.join(["%s" % val for val in row])))
-    #         f.write("\n")
-    # # line = open("branches_distances.csv","r").readline()
+    for row in sorted(inner_list):
+        with open(MISSING_PRODUCT_FILE, 'a') as f:
+            value = (','.join(["%s" % val for val in row]))
+            if str(type(value)) == 'unicode':
+                value = value.encode('utf-8')
+            f.write(value)
+            f.write("\n")
 
 
 def write_task_lists_to_file():
@@ -225,5 +215,5 @@ def write_task_lists_to_file():
 if __name__ == '__main__':
     organize_orders()
     write_task_lists_to_file()
-    # create_missing_prod_file()
+    create_missing_prod_file()
 
