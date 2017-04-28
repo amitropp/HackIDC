@@ -91,12 +91,16 @@ def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *ar
     print "in assign_to_carrier()"
     product_id = str(order.product_id)
     entry = {
-        'dst_address': get_unicode(order['address']) if to_customer else branches[branches['branch_id'] == args[0]].address,
+        'dst_address': get_unicode(order['address']) if to_customer else (branches[branches['branch_id'] == args[0]].address.iloc[0]).encode('utf-8'),
         'product_id': product_id,
-        'recipient': get_unicode(order['name']) if to_customer else branches[branches['branch_id'] == args[0]].branch_name,
-        'phone_number': order['phone_number'] if to_customer else branches[branches['branch_id'] ==
-                                                                           args[0]].phone_number
+        'recipient': get_unicode(order['name']) if to_customer else (branches[branches['branch_id'] == args[0]].branch_name.iloc[0]).encode('utf-8'),
+        'phone_number': order['phone_number'] if to_customer else (branches[branches['branch_id'] ==
+                                                                           args[0]].phone_number.iloc[0]).encode('utf-8')
     }
+    print entry['dst_address'] , str(type(entry['dst_address']))
+    print entry['product_id'], str(type(entry['dst_address']))
+    print entry['recipient'], str(type(entry['recipient']))
+    print entry['phone_number'], str(type(entry['phone_number']))
     carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
         else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
 
@@ -130,12 +134,21 @@ def supplier_delivers_to_branch(order, branch_id):
     product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
     branch_name = branches.loc[branches.branch_id == branch_id].branch_name.iloc[0]
 
-    msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
-            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
-    print msg
-    res = yes_no_msg(msg)
-    sleep(3)
-    if res:
+    # msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
+    #         get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
+    # print msg
+    # res = yes_no_msg(msg)
+    # sleep(3)
+    # if res:
+    #     assign_to_carrier(order, branch_id)
+    #     return True
+    # return False
+
+    user_response = ''
+    while user_response not in ['Y', 'N', 'y', 'n']:
+        user_response = raw_input('Can supplier {} send product {} ({}) to branch {}?\tY/N\t'.format(
+            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name)))
+    if user_response.lower() == 'y':
         assign_to_carrier(order, branch_id)
         return True
     return False
@@ -209,14 +222,7 @@ def write_task_lists_to_file():
                 dict_writer = DictWriter(f, keys, delimiter=",")
                 dict_writer.writeheader()
                 for task in tasks:
-                    new_task = {}
-                    for key in task.keys():
-                        value = task[key]
-                        if (str(type(value)) == 'unicode'):
-                            value = value.encode('utf-8')
-                        # print 'new value: ' + str(value)
-                        new_task[key] = value
-                    dict_writer.writerow(new_task)
+                    dict_writer.writerow(task)
 
 
 if __name__ == '__main__':
