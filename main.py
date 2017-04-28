@@ -51,11 +51,11 @@ def handle_order(order):
                     exceptional(order)
         #update product_not_in_stock list
         if not is_in_delivery_branch:
-            if delivery_branch in product_not_in_stock.keys():
-                value = [order['product_id'], product_not_in_stock.get(delivery_branch)[1] + 1]
+            key = [delivery_branch, order['product_id']]
+            if key in product_not_in_stock:
+                product_not_in_stock[key] += 1
             else:
-                value = [order['product_id'], 1]
-            product_not_in_stock[delivery_branch] = value
+                product_not_in_stock[key] = 1
 
 
 def get_unicode(s):  # pass test
