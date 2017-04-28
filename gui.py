@@ -6,5 +6,3 @@ def ok_msg(msg):
     return easygui.msgbox(msg, 'Logeasy')
 
 
-
-
