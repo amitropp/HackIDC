@@ -1,8 +1,6 @@
 import requests
 from dataframes import branches
 
-import datetime
-
 FILE_NAME = "branches_distances.csv"
 # The maximum duration travel we are allowing from out source to the destination
 MAX_DURATION = 1800
@@ -97,19 +95,3 @@ def tal_test2():
         #     f.write("\n")
             # line = open("branches_distances.csv","r").readline()
     print("fin")
-
-
-
-
-################################### GUI ####################
-
-# import pymsgbox as py
-#
-#
-# def show_meg_to_usesr(message,):
-#     py.alert(message, "logeasy")
-#
-# def user_choice(message):
-#     """Return Yes or No according to user choice"""
-#     return py.confirm("message here", "logeasy", ["Yes", "No"])
-#

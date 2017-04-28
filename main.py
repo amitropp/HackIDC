@@ -3,6 +3,7 @@
 from csv import DictWriter
 from dataframes import branches, carriers, orders, inventory, products, task_lists, \
     product_not_in_stock, MIN_MISSING_PRODUCT_TO_ALERT
+from gui import ok_msg, yes_no_msg
 from maps_utils import find_closest_branches
 from time import sleep
 import threading
@@ -129,11 +130,10 @@ def supplier_delivers_to_branch(order, branch_id):
     product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
     branch_name = branches.loc[branches.branch_id == branch_id].branch_name.iloc[0]
 
-    user_response = ''
-    while user_response not in ['Y', 'N', 'y', 'n']:
-        user_response = raw_input('Can supplier {} send product {} ({}) to branch {}?\tY/N\t'.format(
-            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name)))
-    if user_response.lower() == 'y':
+    msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
+            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
+    print msg
+    if yes_no_msg(msg):
         assign_to_carrier(order, branch_id)
         return True
     return False
@@ -220,5 +220,5 @@ def write_task_lists_to_file():
 if __name__ == '__main__':
     organize_orders()
     write_task_lists_to_file()
-    create_missing_prod_file()
+    # create_missing_prod_file()
 
