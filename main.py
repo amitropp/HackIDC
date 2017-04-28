@@ -78,9 +78,9 @@ def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *ar
     entry = {
         'dst_address': get_unicode(order['address']) if to_customer else branches[branches['branch_id'] == args[0]].address,
         'product_id': product_id,
-        'recipient': get_unicode(order['name']) if to_customer else branches[branches['branch_id'] == args[0]].branch_name,
+        'recipient': get_unicode(order['name']) if to_customer else branches[branches['branch_id'] == args[0]].branch_name.iloc[0],
         'phone_number': order['phone_number'] if to_customer else branches[branches['branch_id'] ==
-                                                                           args[0]].phone_number
+                                                                           args[0]].phone_number.iloc[0]
     }
     carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
         else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
