@@ -17,8 +17,6 @@ TASKS_LOCK = threading.Lock()
 INVENTORY_LOCK = threading.Lock()
 
 
-
-
 def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
     in a separate thread. """
@@ -58,7 +56,6 @@ def handle_order(order):
             else:
                 value = [order['product_id'], 1]
             product_not_in_stock[delivery_branch] = value
-
 
 
 def get_unicode(s):  # pass test
