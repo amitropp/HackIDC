@@ -133,7 +133,9 @@ def supplier_delivers_to_branch(order, branch_id):
     msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
             get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
     print msg
-    if yes_no_msg(msg):
+    res = yes_no_msg(msg)
+    sleep(3)
+    if res:
         assign_to_carrier(order, branch_id)
         return True
     return False

@@ -6,7 +6,7 @@ FILE_NAME = "branches_distances.csv"
 MAX_DURATION = 1800
 
 
-our_key = "AIzaSyAl6XMzwkqP4FQn_RDIE0XP6WyyoG2ah_g"
+our_key = "AIzaSyBcFvf4T7TWk-DQgq-YxU5Z6yZn0GvDGPs"
 url = "https://maps.googleapis.com/maps/api/distancematrix/json" + \
       "?units=imperial" + "&origins={0}&destinations={1}&key=" + our_key
 
