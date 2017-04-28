@@ -1,8 +1,8 @@
 import pandas as pd
 
+# PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
+PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
 
-PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
-# PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
@@ -41,3 +41,8 @@ inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
 """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
 task_lists = {str(carrier.branch_id): [] for index, carrier in carriers.iterrows()}
 task_lists['buzzer'] = []
+
+# The missing products list
+product_not_in_stock = {str(branch.branch_id): [] for index, branch in branches.iterrows()}
+MIN_MISSING_PRODUCT_TO_ALERT = 2
+
