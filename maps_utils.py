@@ -8,7 +8,7 @@ FILE_NAME = "branches_distances.csv"
 MAX_DURATION = 1800
 
 
-our_key = "AIzaSyBrb_DS64cz0KxY1xRub8T1Xo4KZ08nXY0"
+our_key = "AIzaSyAl6XMzwkqP4FQn_RDIE0XP6WyyoG2ah_g"
 url = "https://maps.googleapis.com/maps/api/distancematrix/json" + \
       "?units=imperial" + "&origins={0}&destinations={1}&key=" + our_key
 
@@ -103,13 +103,13 @@ def tal_test2():
 
 ################################### GUI ####################
 
-import pymsgbox as py
-
-
-def show_meg_to_usesr(message,):
-    py.alert(message, "logeasy")
-
-def user_choice(message):
-    """Return Yes or No according to user choice"""
-    return py.confirm("message here", "logeasy", ["Yes", "No"])
-
+# import pymsgbox as py
+#
+#
+# def show_meg_to_usesr(message,):
+#     py.alert(message, "logeasy")
+#
+# def user_choice(message):
+#     """Return Yes or No according to user choice"""
+#     return py.confirm("message here", "logeasy", ["Yes", "No"])
+#
