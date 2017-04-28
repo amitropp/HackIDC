@@ -6,7 +6,7 @@ FILE_NAME = "branches_distances.csv"
 MAX_DURATION = 1800
 
 
-our_key = "AIzaSyB4CnB2soqquiW2ZHidW_u-eJiOo4Ki8tg"
+our_key = "AIzaSyBrb_DS64cz0KxY1xRub8T1Xo4KZ08nXY0"
 url = "https://maps.googleapis.com/maps/api/distancematrix/json" + \
       "?units=imperial" + "&origins={0}&destinations={1}&key=" + our_key
 
@@ -32,7 +32,7 @@ def find_closest_branches(customer_address):
 
         # Convert to json format
         response = requests.get(curr_url).json()
-        print 'response', response
+        # print 'response', response
 
         # Return the duration time from the origin to destination (in seconds)
         curr_dur = response["rows"][0]["elements"][0]["duration"]["value"]

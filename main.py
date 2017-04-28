@@ -17,7 +17,6 @@ def organize_orders():
     in a separate thread. """
     for _, order in orders.iterrows():
         threading.Thread(target=handle_order, args=order).start()
-    write_task_lists_to_file()
 
 
 def handle_order(order):
@@ -121,7 +120,8 @@ def supplier_delivers_to_customer(order):
     user_response = ''
     while user_response not in ['Y', 'N', 'y', 'n']:
         user_response = raw_input('Can supplier {} send product {} ({}) to customer at address'
-                                  '{}?\tY/N\t'.format(supplier_name, product_id, product_name, address))
+                                  '{}?\tY/N\t'.format(get_unicode(supplier_name), product_id,
+                                                      get_unicode(product_name),  get_unicode(address)))
     return user_response.lower() == 'y'
 
 
@@ -130,7 +130,7 @@ def buzzerable(order):
     product_id = order.product_id
     buzzer_value = products.loc[products.product_id == str(product_id)].buzzerable.iloc[0]
     if buzzer_value in BUZZER_VALUES:
-        assign_to_carrier(order, task_lists)
+        assign_to_carrier(order)
         return True
     return False
 
@@ -144,10 +144,9 @@ def exceptional(order):
 def write_task_lists_to_file():
     print 'writing to file...'
     for carrier, tasks in task_lists.iteritems():
-        print carrier
         if tasks:
             keys = tasks[0].keys()
-            with open('{}.txt'.format(carrier), "w") as f:
+            with open('{}.txt'.format(str(carrier)), "w") as f:
                 dict_writer = DictWriter(f, keys, delimiter="\t")
                 dict_writer.writeheader()
                 for task in tasks:
@@ -156,3 +155,4 @@ def write_task_lists_to_file():
 
 if __name__ == '__main__':
     organize_orders()
+    write_task_lists_to_file()
