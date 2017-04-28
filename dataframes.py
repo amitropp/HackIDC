@@ -2,7 +2,7 @@ import pandas as pd
 
 # PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
 PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
-PATH = r'C:\Users\talv\Documents\Hack_Idc\data'
+# PATH = r'C:\Users\talv\Documents\Hack_Idc\data'
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
@@ -32,7 +32,7 @@ products = pd.read_csv('{}/products.csv'.format(PATH), encoding='hebrew', usecol
 # import inventory
 exclude_cols = [1, 2, 3] # item description and total item count
 exclude_rows = [0] # branches names
-inventory = pd.read_csv('{}\inventory.csv'.format(PATH))
+inventory = pd.read_csv('{}/inventory.csv'.format(PATH))
 inventory.drop(inventory.columns[exclude_cols], axis=1, inplace=True)
 inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
 
@@ -43,7 +43,7 @@ task_lists = {str(carrier.branch_id): [] for index, carrier in carriers.iterrows
 task_lists['buzzer'] = []
 
 # The missing products list
-product_not_in_stock = {str(branch.branch_id): [] for index, branch in branches.iterrows()}
+product_not_in_stock = {}
 MIN_MISSING_PRODUCT_TO_ALERT = 2
 MISSING_PRODUCT_FILE = "mis_prod_.csv"
 

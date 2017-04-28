@@ -13,8 +13,8 @@ import threading
 BUZZER_BRANCH = 109
 BUZZER_VALUES = [1, 3]
 PICK_UP_STR = 'איסוף עצמי'
-TASKS_LOCK = threading.Lock()
-INVENTORY_LOCK = threading.Lock()
+# TASKS_LOCK = threading.Lock()
+# INVENTORY_LOCK = threading.Lock()
 
 
 def organize_orders():
@@ -22,9 +22,10 @@ def organize_orders():
     in a separate thread. """
     active_threads = []
     for _, order in orders.iterrows():
-        threading.Thread(target=handle_order, args=[order]).start()
-    while len(threading.enumerate()) > 1:
-        sleep(5)
+        handle_order(order)
+        # threading.Thread(target=handle_order, args=[order]).start()
+    # while len(threading.enumerate()) > 1:
+    #     sleep(5)
 
 
 def handle_order(order):
@@ -38,24 +39,29 @@ def handle_order(order):
         if stock_branch:
             if delivery_branch == stock_branch:  # product leaves from closest branch
                 is_in_delivery_branch = True
-                print 'delivery from home branch!'
+                # print 'delivery from home branch!'
                 assign_to_carrier(order, delivery_branch, to_customer=True)
                 return
             else:
-                print 'planning routing...'
+                # print 'planning routing...'
                 plan_route(order, stock_branch, delivery_branch)
                 return
         if not supplier_delivers_to_branch(order, delivery_branch):
             if not supplier_delivers_to_customer(order):
                 if not buzzerable(order):
                     exceptional(order)
-        #update product_not_in_stock list
-        if not is_in_delivery_branch:
-            key = [delivery_branch, order['product_id']]
-            if key in product_not_in_stock:
-                product_not_in_stock[key] += 1
-            else:
-                product_not_in_stock[key] = 1
+        # update product_not_in_stock list
+        key = [delivery_branch, order['product_id']]
+        found = False
+        for key1, key2 in product_not_in_stock:
+            # if key not in product_not_in_stock:
+            if key1 == key[0] and key2 == key[1]:
+                product_not_in_stock[(key1,key2)].append(product_not_in_stock[(key1,key2)] + 1)
+                found = True
+                break
+        if not found:
+            product_not_in_stock[(key[0], key[1])] = 1
+
 
 
 def get_unicode(s):  # pass test
@@ -85,7 +91,7 @@ def find_closest_branch_with_product(branches_ids_by_duration, product_id, amoun
 def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *args):  # pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
     args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
-    print "in assign_to_carrier()"
+    # print "in assign_to_carrier()"
     product_id = str(order.product_id)
     entry = {
         'dst_address': get_unicode(order['address']) if to_customer else (branches[branches['branch_id'] == args[0]].address.iloc[0]).encode('utf-8'),
@@ -94,27 +100,20 @@ def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *ar
         'phone_number': order['phone_number'] if to_customer else (branches[branches['branch_id'] ==
                                                                            args[0]].phone_number.iloc[0]).encode('utf-8')
     }
-    print entry['dst_address'] , str(type(entry['dst_address']))
-    print entry['product_id'], str(type(entry['dst_address']))
-    print entry['recipient'], str(type(entry['recipient']))
-    print entry['phone_number'], str(type(entry['phone_number']))
+
     carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
         else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
 
-    TASKS_LOCK.acquire()
-    print "TASKS_LOCK.acquire() from thread " + threading.current_thread().getName()
-    print "carrier_name: " + carrier_name
+    # TASKS_LOCK.acquire()
     task_lists[carrier_name].append(entry)
-    TASKS_LOCK.release()
-    print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
+    # TASKS_LOCK.release()
+    # print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
     # Update inventory
     if to_customer:
-        INVENTORY_LOCK.acquire()
-        print "INVENTORY_LOCK.acquire() from thread " + threading.current_thread().getName()
+        # INVENTORY_LOCK.acquire()
         curr_val = inventory.loc[inventory.product_id == str(product_id)][str(carrier_branch)].iloc[0]
         inventory.set_value(str(product_id), str(carrier_branch), curr_val - order.amount)
-        INVENTORY_LOCK.release()
-        print "INVENTORY_LOCK.release() from thread " + threading.current_thread().getName()
+        # INVENTORY_LOCK.release()
 
 
 def plan_route(order, src_branch, dst_branch):
@@ -131,24 +130,24 @@ def supplier_delivers_to_branch(order, branch_id):
     product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
     branch_name = branches.loc[branches.branch_id == branch_id].branch_name.iloc[0]
 
-    # msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
-    #         get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
+    msg = 'Can supplier {} send product {} ({}) to branch {}?'.format(
+            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name))
     # print msg
-    # res = yes_no_msg(msg)
-    # sleep(3)
-    # if res:
-    #     assign_to_carrier(order, branch_id)
-    #     return True
-    # return False
-
-    user_response = ''
-    while user_response not in ['Y', 'N', 'y', 'n']:
-        user_response = raw_input('Can supplier {} send product {} ({}) to branch {}?\tY/N\t'.format(
-            get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name)))
-    if user_response.lower() == 'y':
+    res = yes_no_msg(msg)
+    if res:
         assign_to_carrier(order, branch_id)
         return True
     return False
+
+    # # with threads
+    # user_response = ''
+    # while user_response not in ['Y', 'N', 'y', 'n']:
+    #     user_response = raw_input('Can supplier {} send product {} ({}) to branch {}?\tY/N\t'.format(
+    #         get_unicode(supplier_name), product_id, get_unicode(product_name), get_unicode(branch_name)))
+    # if user_response.lower() == 'y':
+    #     assign_to_carrier(order, branch_id)
+    #     return True
+    # return False
 
 
 def supplier_delivers_to_customer(order):
@@ -159,12 +158,18 @@ def supplier_delivers_to_customer(order):
     product_name = products.loc[products.product_id == str(product_id)].product_name.iloc[0]
     address = order.address
 
-    user_response = ''
-    while user_response not in ['Y', 'N', 'y', 'n']:
-        user_response = raw_input('Can supplier {} send product {} ({}) to customer at address'
-                                  '{}?\tY/N\t'.format(get_unicode(supplier_name), product_id,
-                                                      get_unicode(product_name),  get_unicode(address)))
-    return user_response.lower() == 'y'
+    msg = 'Can supplier {} send product {} ({}) to customer at address'
+    '{}?\tY/N\t'.format(get_unicode(supplier_name), product_id, get_unicode(product_name),  get_unicode(address))
+    print msg
+    return yes_no_msg(msg)
+
+    # # with threads
+    # user_response = ''
+    # while user_response not in ['Y', 'N', 'y', 'n']:
+    #     user_response = raw_input('Can supplier {} send product {} ({}) to customer at address'
+    #                               '{}?\tY/N\t'.format(get_unicode(supplier_name), product_id,
+    #                                                   get_unicode(product_name),  get_unicode(address)))
+    # return user_response.lower() == 'y'
 
 
 def buzzerable(order):
@@ -179,8 +184,9 @@ def buzzerable(order):
 
 def exceptional(order):
     """ prints an error regarding delivery failure. """
-    print 'Exception: order {} to customer {} cannot be delivered.\n' \
+    msg = 'Exception: order {} to customer {} cannot be delivered.\n' \
           'Please inform the customer of this issue at {}'.format(order.order_id, order.name, order.phone_number)
+    ok_msg(msg)
 
 
 
@@ -215,5 +221,5 @@ def write_task_lists_to_file():
 if __name__ == '__main__':
     organize_orders()
     write_task_lists_to_file()
-    create_missing_prod_file()
+    # create_missing_prod_file()
 
