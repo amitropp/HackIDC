@@ -3,6 +3,7 @@
 from csv import DictWriter
 from dataframes import branches, carriers, orders, inventory, products, task_lists
 from maps_utils import find_closest_branches
+from time import sleep
 import threading
 
 
@@ -10,17 +11,22 @@ BUZZER_BRANCH = 109
 BUZZER_VALUES = [1, 3]
 PICK_UP_STR = 'איסוף עצמי'
 TASKS_LOCK = threading.Lock()
+INVENTORY_LOCK = threading.Lock()
 
 
 def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
     in a separate thread. """
+    active_threads = []
     for _, order in orders.iterrows():
-        threading.Thread(target=handle_order, args=order).start()
+        threading.Thread(target=handle_order, args=[order]).start()
+    while len(threading.enumerate()) > 1:
+        sleep(5)
 
 
 def handle_order(order):
     """ handle an order from a customer according to the flow diagram. """
+    print "new order"
     if not string_cmp(order.delivery, PICK_UP_STR):  # delivery is needed
         closest_branches = find_closest_branches(order['address'])
         delivery_branch = closest_branches[0]
@@ -67,6 +73,7 @@ def find_closest_branch_with_product(branches_ids_by_duration, product_id, amoun
 def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *args):  # pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
     args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
+    print "in assign_to_carrier()"
     product_id = str(order.product_id)
     entry = {
         'dst_address': get_unicode(order['address']) if to_customer else branches[branches['branch_id'] == args[0]].address,
@@ -76,13 +83,21 @@ def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *ar
                                                                            args[0]].phone_number
     }
     carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
-        else carriers.loc[carriers.branch_id == carrier_branch].carrier_name.iloc[0]
-    TASKS_LOCK.acuqire()
+        else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
+
+    TASKS_LOCK.acquire()
+    # print "TASKS_LOCK.acquire() from thread " + threading.current_thread().getName()
     task_lists[carrier_name].append(entry)
     TASKS_LOCK.release()
+    # print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
     # Update inventory
     if to_customer:
-        inventory.loc[inventory.product_id == str(product_id)][str(carrier_branch)].iloc[0] -= order.amount
+        INVENTORY_LOCK.acquire()
+        # print "INVENTORY_LOCK.acquire() from thread " + threading.current_thread().getName()
+        curr_val = inventory.loc[inventory.product_id == str(product_id)][str(carrier_branch)].iloc[0]
+        inventory.set_value(str(product_id), str(carrier_branch), curr_val - order.amount)
+        INVENTORY_LOCK.release()
+        # print "INVENTORY_LOCK.release() from thread " + threading.current_thread().getName()
 
 
 def plan_route(order, src_branch, dst_branch):
@@ -146,11 +161,17 @@ def write_task_lists_to_file():
     for carrier, tasks in task_lists.iteritems():
         if tasks:
             keys = tasks[0].keys()
-            with open('{}.txt'.format(str(carrier)), "w") as f:
-                dict_writer = DictWriter(f, keys, delimiter="\t")
+            with open('{}.csv'.format(str(carrier)), "w") as f:
+                dict_writer = DictWriter(f, keys, delimiter=",")
                 dict_writer.writeheader()
                 for task in tasks:
-                    dict_writer.writerow(task)
+                    new_task = {}
+                    for key in task.keys():
+                        value = task[key]
+                        if (str(type(value)) == 'unicode'):
+                            value = value.encode('utf-8')
+                        new_task[key] = value
+                    dict_writer.writerow(new_task)
 
 
 if __name__ == '__main__':
