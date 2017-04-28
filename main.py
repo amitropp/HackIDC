@@ -1,17 +1,21 @@
 # coding=utf8
 
 from csv import DictWriter
-from dataframes import branches, carriers, orders, inventory, products, task_lists
+from dataframes import branches, carriers, orders, inventory, products, task_lists, product_not_in_stock, MIN_MISSING_PRODUCT
 from maps_utils import find_closest_branch
+import datetime
 
 BUZZER_BRANCH = 109
 BUZZER_VALUES = [1, 3]
 PICK_UP_STR = "איסוף עצמי"
 
 
+
+
 def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
     according to the flow diagram. """
+
     for _, order in orders.iterrows():
         if not string_cmp(order.delivery, PICK_UP_STR):  # delivery is needed
             product_id = order['product_id']
@@ -27,6 +31,12 @@ def organize_orders():
                     assign_to_carrier(order, delivery_branch, to_customer=True)
                     continue
                 else:
+                    # Add to the list of missing products - the product that is related to this branch
+                    key = [delivery_branch, product_id ]
+                    if key in product_not_in_stock:
+                        product_not_in_stock[key] +=1
+                    else:
+                        product_not_in_stock[key] = 1
                     print 'plans route'
                     plan_route(order, stock_branch, delivery_branch)
                     continue
@@ -147,5 +157,67 @@ def write_task_lists_to_file():
                 for task in tasks:
                     dict_writer.writerow(task)
 
+
+def create_missing_prod_file():
+
+    inner_list = []
+    for key in product_not_in_stock:
+        prod_counter = product_not_in_stock[key]
+        if prod_counter >= MIN_MISSING_PRODUCT:
+            inner_list += [key, prod_counter]
+        # if prod_counter < MIN_MISSING_PRODUCT:
+        #     del product_not_in_stock[key]
+
+    # Sort the list by branches
+    sortted_list = sorted(inner_list[0][0])
+    now = datetime.datetime.now()
+    file_name = "mis_prod_" + str(now.date) + ".csv"
+
+    for row in sortted_list:
+        with open(file_name, 'a') as f:
+            f.write((','.join(["%s" % val for val in row])))
+            f.write("\n")
+    # line = open("branches_distances.csv","r").readline()
+
+
+
+def tal_test():
+
+    print("fin")
+
+    product_not_in_stock["stock_d", 5] = 2
+    product_not_in_stock["stock_a", 1] = 1
+    product_not_in_stock["stock_b", 1] = 4
+    product_not_in_stock["stock_c", 1] = 21
+    product_not_in_stock["stock_a", 2] = 3
+    product_not_in_stock["stock_j", 101] = 1
+    product_not_in_stock["stock_a", 3] = 12
+    product_not_in_stock["stock_j", 100] = 10
+
+
+    MIN_MISSING_PRODUCT = 1
+    inner_list = []
+    for key in product_not_in_stock:
+        prod_counter = product_not_in_stock[key]
+        if prod_counter >= MIN_MISSING_PRODUCT:
+            inner_list += [key, prod_counter]
+            # if prod_counter < MIN_MISSING_PRODUCT:
+            #     del product_not_in_stock[key]
+
+    # Sort the list by branches
+    sortted_list = sorted(inner_list[0][0])
+    now = datetime.datetime.now()
+    file_name = "mis_prod_" + str(now.date) + ".csv"
+
+    for row in sortted_list:
+        with open(file_name, 'a') as f:
+            f.write((','.join(["%s" % val for val in row])))
+            f.write("\n")
+            # line = open("branches_distances.csv","r").readline()
+
+
+
 if __name__ == '__main__':
-    organize_orders()
+    # organize_orders()
+
+    tal_test()

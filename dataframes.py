@@ -2,7 +2,8 @@ import pandas as pd
 
 
 # PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
-PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
+# PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
+PATH = r"C:\Users\talv\Documents\Hack_Idc\data"
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
@@ -32,12 +33,16 @@ products = pd.read_csv('{}/products.csv'.format(PATH), encoding='hebrew', usecol
 # import inventory
 exclude_cols = [1, 2, 3] # item description and total item count
 exclude_rows = [0] # branches names
-inventory = pd.read_csv('{}/inventory.csv'.format(PATH))
-inventory.drop(inventory.columns[exclude_cols], axis=1, inplace=True)
-inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
+# inventory = pd.read_csv('{}/inventory.csv'.format(PATH))
+# inventory.drop(inventory.columns[exclude_cols], axis=1, inplace=True)
+# inventory.drop(inventory.index[exclude_rows], axis=0, inplace=True)
 
 
 # initialize task lists
 """ initializes an empty list of tasks per each carrier in the carriers DataFrame. """
 task_lists = {carrier.carrier_name: [] for index, carrier in carriers.iterrows()}
 task_lists['buzzer'] = []
+
+# The missing products list
+product_not_in_stock = {}
+MIN_MISSING_PRODUCT = 2

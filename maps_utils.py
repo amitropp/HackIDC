@@ -1,6 +1,8 @@
 import requests
 from dataframes import branches
 
+import datetime
+
 FILE_NAME = "branches_distances.csv"
 # The maximum duration travel we are allowing from out source to the destination
 MAX_DURATION = 1800
@@ -55,4 +57,59 @@ def find_closest_branch(customer_address):
         else:
             break
     return relevant_branches
+
+
+
+
+def tal_test():
+
+
+    product_not_in_stock ={}
+    product_not_in_stock["stock_d", 5] = 2
+    product_not_in_stock["stock_a", 1] = 1
+    product_not_in_stock["stock_b", 1] = 4
+    product_not_in_stock["stock_c", 1] = 21
+    product_not_in_stock["stock_a", 2] = 3
+    product_not_in_stock["stock_j", 101] = 1
+    product_not_in_stock["stock_a", 3] = 12
+    product_not_in_stock["stock_j", 100] = 10
+
+
+    MIN_MISSING_PRODUCT = 1
+    inner_list = []
+    for key in product_not_in_stock:
+        prod_counter = product_not_in_stock[key]
+        if prod_counter >= MIN_MISSING_PRODUCT:
+            inner_list += [key, prod_counter]
+            # if prod_counter < MIN_MISSING_PRODUCT:
+            #     del product_not_in_stock[key]
+    print("fin")
+    # Sort the list by branches
+    sortted_list = sorted(inner_list[0][0])
+    # now = datetime.datetime.now()
+    file_name = "mis_prod_.csv"
+
+    for row in sortted_list:
+
+        print(row)
+        # with open(file_name, 'a') as f:
+        #     f.write((','.join(["%s" % val for val in row])))
+        #     f.write("\n")
+            # line = open("branches_distances.csv","r").readline()
+    print("fin")
+
+
+
+
+################################### GUI ####################
+
+import pymsgbox as py
+
+
+def show_meg_to_usesr(message,):
+    py.alert(message, "logeasy")
+
+def user_choice(message):
+    """Return Yes or No according to user choice"""
+    return py.confirm("message here", "logeasy", ["Yes", "No"])
 
