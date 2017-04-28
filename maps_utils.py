@@ -19,7 +19,7 @@ def get_unicode(s):  # pass test
     return s
 
 
-def find_closest_branch(customer_address):
+def find_closest_branches(customer_address):
     """ This function returns a list of branche's ids in ascending order by their distance from the costumer"""
     # If the duration travel is less than the maximum - add it to the list
     # The branche's ids that are in the transport distance
@@ -61,7 +61,7 @@ def find_closest_branch(customer_address):
 
 
 
-def tal_test():
+def tal_test2():
 
 
     product_not_in_stock ={}

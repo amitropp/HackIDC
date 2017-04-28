@@ -1,9 +1,10 @@
 import pandas as pd
 
 
-# PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
+
+PATH = 'C:\Users\itc_user1\Desktop\HackIDC\data'
 # PATH = '/Users/amitropp/Documents/Private/HackIDC/data'
-PATH = r"C:\Users\talv\Documents\Hack_Idc\data"
+
 
 # import branches
 branches_headers = ['branch_id', 'branch_name', 'phone_number', 'district', 'address']
@@ -46,3 +47,4 @@ task_lists['buzzer'] = []
 # The missing products list
 product_not_in_stock = {}
 MIN_MISSING_PRODUCT = 2
+

@@ -3,17 +3,23 @@
 from csv import DictWriter
 from dataframes import branches, carriers, orders, inventory, products, task_lists, product_not_in_stock, MIN_MISSING_PRODUCT
 from maps_utils import find_closest_branch
-import datetime
+from time import sleep
+import threading
+
+
 
 BUZZER_BRANCH = 109
 BUZZER_VALUES = [1, 3]
-PICK_UP_STR = "איסוף עצמי"
+PICK_UP_STR = 'איסוף עצמי'
+TASKS_LOCK = threading.Lock()
+INVENTORY_LOCK = threading.Lock()
 
 
 
 
 def organize_orders():
     """ goes through all orders in the DataFrame and handles each one of them
+<<<<<<< HEAD
     according to the flow diagram. """
 
     for _, order in orders.iterrows():
@@ -40,12 +46,36 @@ def organize_orders():
                     print 'plans route'
                     plan_route(order, stock_branch, delivery_branch)
                     continue
+=======
+    in a separate thread. """
+    active_threads = []
+    for _, order in orders.iterrows():
+        threading.Thread(target=handle_order, args=[order]).start()
+    while len(threading.enumerate()) > 1:
+        sleep(5)
+
+
+def handle_order(order):
+    """ handle an order from a customer according to the flow diagram. """
+    print "new order"
+    if not string_cmp(order.delivery, PICK_UP_STR):  # delivery is needed
+        closest_branches = find_closest_branches(order['address'])
+        delivery_branch = closest_branches[0]
+        stock_branch = find_closest_branch_with_product(closest_branches, order['product_id'], order.amount)
+        if stock_branch:
+            if delivery_branch == stock_branch:  # product leaves from closest branch
+                print 'delivery from home branch!'
+                assign_to_carrier(order, delivery_branch, to_customer=True)
+                return
+>>>>>>> 923741b275fae530fcb9a7e0bfda818d3d01f5b6
             else:
-                if not check_supplier_delivery_to_branch(order, delivery_branch):
-                    if not check_supplier_delivery_to_customer(order):
-                        if not buzzerable(order):
-                            exceptional(order)
-    #write_task_lists_to_file()
+                print 'planning routing...'
+                plan_route(order, stock_branch, delivery_branch)
+                return
+        if not supplier_delivers_to_branch(order, delivery_branch):
+            if not supplier_delivers_to_customer(order):
+                if not buzzerable(order):
+                    exceptional(order)
 
 
 def get_unicode(s):  # pass test
@@ -75,18 +105,31 @@ def find_closest_branch_with_product(branches_ids_by_duration, product_id, amoun
 def assign_to_carrier(order, carrier_branch=BUZZER_BRANCH, to_customer=True, *args):  # pass test to_customer=True
     """ adds an entry to the delivery list of the correct carrier.
     args[0] is the branch ID to deliver to, in case of inter-branch delivery. """
+    print "in assign_to_carrier()"
+    product_id = str(order.product_id)
     entry = {
         'dst_address': get_unicode(order['address']) if to_customer else branches[branches['branch_id'] == args[0]].address,
-        'product_id': order['product_id'],
+        'product_id': product_id,
         'recipient': get_unicode(order['name']) if to_customer else branches[branches['branch_id'] == args[0]].branch_name,
         'phone_number': order['phone_number'] if to_customer else branches[branches['branch_id'] ==
                                                                            args[0]].phone_number
     }
     carrier_name = 'buzzer' if carrier_branch == BUZZER_BRANCH \
-        else carriers.loc[carriers.branch_id == carrier_branch].carrier_name.iloc[0]
-    # print "type of : " + str(type(carrier_name))
-    # print "carrier_name : " + carrier_name
+        else str(carriers.loc[carriers.branch_id == carrier_branch].branch_id.iloc[0])
+
+    TASKS_LOCK.acquire()
+    # print "TASKS_LOCK.acquire() from thread " + threading.current_thread().getName()
     task_lists[carrier_name].append(entry)
+    TASKS_LOCK.release()
+    # print "TASKS_LOCK.release() from thread " + threading.current_thread().getName()
+    # Update inventory
+    if to_customer:
+        INVENTORY_LOCK.acquire()
+        # print "INVENTORY_LOCK.acquire() from thread " + threading.current_thread().getName()
+        curr_val = inventory.loc[inventory.product_id == str(product_id)][str(carrier_branch)].iloc[0]
+        inventory.set_value(str(product_id), str(carrier_branch), curr_val - order.amount)
+        INVENTORY_LOCK.release()
+        # print "INVENTORY_LOCK.release() from thread " + threading.current_thread().getName()
 
 
 def plan_route(order, src_branch, dst_branch):
@@ -95,7 +138,7 @@ def plan_route(order, src_branch, dst_branch):
     assign_to_carrier(order, dst_branch)
 
 
-def check_supplier_delivery_to_branch(order, branch_id):
+def supplier_delivers_to_branch(order, branch_id):
     """ prompt the user to check if the relevant supplier can provide the product to the delivery
     branch. If it can - the relevant task is added to the delivery branch's list. """
     product_id = order.product_id
@@ -110,11 +153,10 @@ def check_supplier_delivery_to_branch(order, branch_id):
     if user_response.lower() == 'y':
         assign_to_carrier(order, branch_id)
         return True
-    else:
-        return False
+    return False
 
 
-def check_supplier_delivery_to_customer(order):
+def supplier_delivers_to_customer(order):
     """ prompt the user to check if the relevant supplier can provide the product directly
     to the customer. If it can - this is taken care of manually - no task is added to the lists. """
     product_id = order.product_id
@@ -141,6 +183,7 @@ def buzzerable(order):
 
 
 def exceptional(order):
+    """ prints an error regarding delivery failure. """
     print 'Exception: order {} to customer {} cannot be delivered.\n' \
           'Please inform the customer of this issue at {}'.format(order.order_id, order.name, order.phone_number)
 
@@ -148,14 +191,20 @@ def exceptional(order):
 def write_task_lists_to_file():
     print 'writing to file...'
     for carrier, tasks in task_lists.iteritems():
-        print type(carrier)
         if tasks:
             keys = tasks[0].keys()
-            with open('{}.txt'.format(str(carrier)), "w") as f:
-                dict_writer = DictWriter(f, keys, delimiter="\t")
+            with open('{}.csv'.format(str(carrier)), "w") as f:
+                dict_writer = DictWriter(f, keys, delimiter=",")
                 dict_writer.writeheader()
                 for task in tasks:
-                    dict_writer.writerow(task)
+                    new_task = {}
+                    for key in task.keys():
+                        value = task[key]
+                        if (str(type(value)) == 'unicode'):
+                            value = value.encode('utf-8')
+                        new_task[key] = value
+                    dict_writer.writerow(new_task)
+
 
 
 def create_missing_prod_file():
@@ -170,8 +219,7 @@ def create_missing_prod_file():
 
     # Sort the list by branches
     sortted_list = sorted(inner_list[0][0])
-    now = datetime.datetime.now()
-    file_name = "mis_prod_" + str(now.date) + ".csv"
+    file_name = "mis_prod_.csv"
 
     for row in sortted_list:
         with open(file_name, 'a') as f:
@@ -180,44 +228,7 @@ def create_missing_prod_file():
     # line = open("branches_distances.csv","r").readline()
 
 
-
-def tal_test():
-
-    print("fin")
-
-    product_not_in_stock["stock_d", 5] = 2
-    product_not_in_stock["stock_a", 1] = 1
-    product_not_in_stock["stock_b", 1] = 4
-    product_not_in_stock["stock_c", 1] = 21
-    product_not_in_stock["stock_a", 2] = 3
-    product_not_in_stock["stock_j", 101] = 1
-    product_not_in_stock["stock_a", 3] = 12
-    product_not_in_stock["stock_j", 100] = 10
-
-
-    MIN_MISSING_PRODUCT = 1
-    inner_list = []
-    for key in product_not_in_stock:
-        prod_counter = product_not_in_stock[key]
-        if prod_counter >= MIN_MISSING_PRODUCT:
-            inner_list += [key, prod_counter]
-            # if prod_counter < MIN_MISSING_PRODUCT:
-            #     del product_not_in_stock[key]
-
-    # Sort the list by branches
-    sortted_list = sorted(inner_list[0][0])
-    now = datetime.datetime.now()
-    file_name = "mis_prod_" + str(now.date) + ".csv"
-
-    for row in sortted_list:
-        with open(file_name, 'a') as f:
-            f.write((','.join(["%s" % val for val in row])))
-            f.write("\n")
-            # line = open("branches_distances.csv","r").readline()
-
-
-
 if __name__ == '__main__':
-    # organize_orders()
+    organize_orders()
+    write_task_lists_to_file()
 
-    tal_test()
