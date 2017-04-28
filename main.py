@@ -183,7 +183,22 @@ def exceptional(order):
           'Please inform the customer of this issue at {}'.format(order.order_id, order.name, order.phone_number)
 
 
-def create_missing_prod_file():print
+
+def create_missing_prod_file():
+    inner_list = []
+    for key in product_not_in_stock:
+        prod_counter = product_not_in_stock[key]
+        if prod_counter >= MIN_MISSING_PRODUCT_TO_ALERT:
+            inner_list.append([key[0], key[1], prod_counter])
+
+    for row in sorted(inner_list):
+        with open(MISSING_PRODUCT_FILE, 'a') as f:
+            value = (','.join(["%s" % val for val in row]))
+            if str(type(value)) == 'unicode':
+                value = value.encode('utf-8')
+            f.write(value)
+            f.write("\n")
+
 
 def write_task_lists_to_file():
     print 'writing to file...'
@@ -198,7 +213,7 @@ def write_task_lists_to_file():
 
 
 if __name__ == '__main__':
-    # organize_orders()
-    # write_task_lists_to_file()
+    organize_orders()
+    write_task_lists_to_file()
     create_missing_prod_file()
 
